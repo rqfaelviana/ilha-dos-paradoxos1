@@ -41,6 +41,7 @@ SRCS   = $(SRCDIR)/main.c \
          $(SRCDIR)/npc.c \
          $(SRCDIR)/dialogue.c \
          $(SRCDIR)/deduction.c \
+         $(SRCDIR)/quiz.c \
          $(SRCDIR)/ui.c \
          $(SRCDIR)/environment.c \
          $(SRCDIR)/utils.c

@@ -240,9 +240,14 @@ void GameUpdate(GameState* g) {
 
         case SCREEN_GAME:
             EnvUpdate(g);    // Avança o ciclo dia/noite e clima
-            PlayerUpdate(g); // Processa input e move o jogador
-            NPCsUpdate(g);   // Atualiza estado dos NPCs (ex: Ferreiro dia/noite)
-            UIUpdateNotification(g); // Decai o timer das notificações na tela
+            UIUpdateNotification(g);
+            // MELHORIA 1: puzzle de tabela-verdade bloqueia movimento
+            if (g->ttable_active) {
+                TruthTableUpdate(g);
+            } else {
+                PlayerUpdate(g); // Processa input e move o jogador
+                NPCsUpdate(g);   // Atualiza estado dos NPCs (ex: Ferreiro dia/noite)
+            }
             // Centraliza a câmera no centro do jogador
             g->camera.target = (Vector2){
                 g->player.pos.x + TILE_SIZE/2.0f,
@@ -318,6 +323,7 @@ void GameDraw(GameState* g) {
             DrawGameWorld(g);         // Mundo completo
             UIDrawHUD(g);             // HUD: fragmentos do Farol, hora, pistas
             UIDrawNotification(g);    // Notificações flutuantes
+            TruthTableDraw(g);        // MELHORIA 1: overlay do puzzle de porta
             break;
 
         case SCREEN_DIALOGUE:

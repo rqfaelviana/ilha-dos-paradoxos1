@@ -4,7 +4,7 @@ float GameLerp(float a, float b, float t) {
     return a + (b - a) * t;
 }
 
-Color ColorLerp(Color a, Color b, float t) {
+Color ColorLerpJogo(Color a, Color b, float t) {
     if (t < 0.0f) t = 0.0f;
     if (t > 1.0f) t = 1.0f;
     return (Color){

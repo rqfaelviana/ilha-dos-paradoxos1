@@ -101,39 +101,24 @@ static void TryManualDeduction(GameState* g) {
             }
         }
 
-        // Reações específicas para cada resultado possível
-        if (strcmp(c->result, "CONT") == 0) {
-            // Contradição lógica detectada: P ∧ ¬P'
-            ShowNotification(g, "CONTRADIÇÃO ENCONTRADA",
-                "P ∧ ¬P' — A Sacerdotisa mente sobre seu alibi!", COL_UI_RED);
-            g->contradiction_active = true;
-            g->screen_shake = 1.0f; // Tremor visual para enfatizar o momento
-        } else if (strcmp(c->result, "SOLVE") == 0) {
-            // Dedução final: Q ∧ R resolve o mistério
-            ShowNotification(g, "MISTÉRIO SOLUCIONADO!",
-                "Martim desapareceu nas Ruínas. O Código do Farol está lá.", COL_UI_GOLD);
-            g->mystery_solved = true;
-            g->clues[7].confirmed = true;
-            g->clues[9].discovered = true;       // Revela o fragmento 2 do Farol
-            g->player.lighthouse_fragments = 2;  // Avança o progresso do Farol
-            g->screen_shake = 1.5f;
-        } else if (strcmp(c->result, "Q_conf") == 0) {
-            // Padrão do Paradoxal + Q: confirma que o Ferreiro disse a verdade
-            ShowNotification(g, "PADRÃO IDENTIFICADO",
-                "Ferreiro Paradoxal: fala de dia = verdade confirmada.", COL_PARADOXAL);
-            g->clues[7].confirmed = true;
-        } else if (strcmp(c->result, "nP_OR_R") == 0) {
-            // Disjunção desbloqueia o Templo
-            ShowNotification(g, "DEDUÇÃO: ¬P' ∨ R",
-                "O Templo está desbloqueado. As anotações de Martim aguardam.", COL_UI_GOLD);
-        } else if (strcmp(c->result, "Q_IMPL_R") == 0) {
-            // Implicação desbloqueia a Forja
-            ShowNotification(g, "DEDUÇÃO: Q → R",
-                "A Forja está desbloqueada. O diário do Ferreiro revela mais.", COL_PARADOXAL);
-        } else {
-            ShowNotification(g, "DEDUÇÃO CONFIRMADA",
-                g->deductions[c->ded_idx >= 0 ? c->ded_idx : 0].text, COL_UI_GOLD);
+        // MELHORIA 3: para CONT e SOLVE, intercala quiz antes de aplicar
+        if (DedQuizNeeded(c->result)) {
+            // Encontra o índice da pista de conclusão
+            int clue_ci = -1;
+            for (int ci = 0; ci < g->clue_count; ci++) {
+                if (strcmp(g->clues[ci].tag, c->result) == 0) { clue_ci = ci; break; }
+            }
+            DedQuizSetup(g, c->result, c->ded_idx, clue_ci);
+            // Não limpa os slots ainda — limpa após o quiz
+            return;
         }
+
+        // Para as outras deduções, aplica direto
+        int clue_ci = -1;
+        for (int ci = 0; ci < g->clue_count; ci++) {
+            if (strcmp(g->clues[ci].tag, c->result) == 0) { clue_ci = ci; break; }
+        }
+        ApplyDeductionResult(g, c->result, c->ded_idx, clue_ci);
 
         // Limpa os slots após dedução bem-sucedida para nova tentativa
         g->deduce_slot_a = -1;
@@ -184,9 +169,69 @@ void CheckPuzzleSolution(GameState* g) {
 }
 
 // =============================================================
+// ApplyDeductionResult — aplica os efeitos de uma dedução confirmada
+// =============================================================
+// Chamada tanto por TryManualDeduction (deduções sem quiz) quanto
+// por DedQuizUpdate (após o jogador responder corretamente ao quiz).
+void ApplyDeductionResult(GameState* g, const char* result, int ded_idx, int clue_ci) {
+    // Desbloqueia a dedução no caderno
+    if (ded_idx >= 0 && ded_idx < g->deduction_count) {
+        if (!g->deductions[ded_idx].unlocked)
+            g->deductions[ded_idx].unlocked = true;
+    }
+    // Confirma a pista de conclusão
+    if (clue_ci >= 0 && clue_ci < g->clue_count)
+        g->clues[clue_ci].confirmed = true;
+
+    // Efeitos específicos por resultado
+    if (strcmp(result, "CONT") == 0) {
+        ShowNotification(g, "CONTRADICAO ENCONTRADA",
+            "P ^ ¬P' — A Sacerdotisa mente sobre seu alibi!", COL_UI_RED);
+        g->contradiction_active = true;
+        g->screen_shake = 1.0f;
+    } else if (strcmp(result, "SOLVE") == 0) {
+        ShowNotification(g, "MISTERIO SOLUCIONADO!",
+            "Martim desapareceu nas Ruinas. O Codigo do Farol esta la.", COL_UI_GOLD);
+        g->mystery_solved = true;
+        g->clues[7].confirmed = true;
+        g->clues[9].discovered = true;
+        g->player.lighthouse_fragments = 2;
+        g->screen_shake = 1.5f;
+    } else if (strcmp(result, "Q_conf") == 0) {
+        ShowNotification(g, "PADRAO IDENTIFICADO",
+            "Ferreiro Paradoxal: fala de dia = verdade confirmada.", COL_PARADOXAL);
+        g->clues[7].confirmed = true;
+    } else if (strcmp(result, "nP_OR_R") == 0) {
+        ShowNotification(g, "DEDUCAO: ¬P' v R",
+            "Acesse o Templo e resolva o puzzle da porta para entrar.", COL_UI_GOLD);
+    } else if (strcmp(result, "Q_IMPL_R") == 0) {
+        ShowNotification(g, "DEDUCAO: Q -> R",
+            "Acesse a Forja e resolva o puzzle da porta para entrar.", COL_PARADOXAL);
+    } else if (strcmp(result, "nQ_a") == 0) {
+        ShowNotification(g, "DEDUCAO CONFIRMADA",
+            "O alibi do Ferreiro dado pela Sacerdotisa e invalido.", COL_UI_GOLD);
+    } else {
+        if (ded_idx >= 0)
+            ShowNotification(g, "DEDUCAO CONFIRMADA",
+                g->deductions[ded_idx].text, COL_UI_GOLD);
+    }
+
+    // Limpa slots
+    g->deduce_slot_a = -1;
+    g->deduce_slot_b = -1;
+    CheckPuzzleSolution(g);
+}
+
+// =============================================================
 // DeductionUpdate — processa input do jogador no Caderno de Deduções
 // =============================================================
 void DeductionUpdate(GameState* g) {
+    // MELHORIA 3: se quiz ativo, só processa o quiz
+    if (g->ded_quiz_active) {
+        DedQuizUpdate(g);
+        return;
+    }
+
     // Decrementa o timer do feedback de erro vermelho
     if (g->deduce_error_timer > 0) {
         g->deduce_error_timer -= g->delta;
@@ -578,4 +623,7 @@ void DeductionDraw(GameState* g) {
     DrawText("Clique nas pistas para selecionar  |  1-4 Operador  |  ENTER Deduzir  |  C Limpar",
         W/2 - MeasureText("Clique nas pistas para selecionar  |  1-4 Operador  |  ENTER Deduzir  |  C Limpar",11)/2,
         H - 18, 11, COL_UI_DIM);
+
+    // MELHORIA 3: overlay do quiz de dedução
+    DedQuizDraw(g);
 }

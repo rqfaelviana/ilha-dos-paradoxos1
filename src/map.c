@@ -43,6 +43,7 @@ void MapInit(GameState* g) {
             g->map.explored[y][x] = false;
             g->map.door_state[y][x] = false;
             g->map.door_needs_logic[y][x] = false;
+            g->map.door_puzzle_solved[y][x] = false; // MELHORIA 1
         }
     }
 
@@ -140,37 +141,35 @@ bool CheckCollision(GameState* g, Vector2 pos) {
 
         if (tile == TILE_DOOR_CLOSED && g->map.door_needs_logic[ty][tx]) {
             const char* cond = g->map.door_condition[ty][tx];
-            bool has_condition = false;
 
-            if (strcmp(cond, "nP_OR_R") == 0) {
-                bool not_P = g->clues[3].discovered; 
-                bool has_R = g->clues[8].discovered && g->clues[8].discovered;
-                has_condition = not_P || has_R;
-            } else if (strcmp(cond, "Q_IMPL_R") == 0) {
-                bool has_Q = g->clues[7].confirmed;
-                bool has_R = g->clues[8].discovered;
-                has_condition = has_Q && has_R;
-            } else {
-                for (int c = 0; c < g->clue_count; c++) {
-                    if (strcmp(g->clues[c].tag, cond) == 0 && g->clues[c].confirmed) {
-                        has_condition = true;
-                        break;
-                    }
+            // MELHORIA 1: portas compostas (nP_OR_R, Q_IMPL_R) usam tabela-verdade
+            bool is_truth_table_door = (strcmp(cond,"nP_OR_R")==0 || strcmp(cond,"Q_IMPL_R")==0);
+
+            if (is_truth_table_door) {
+                // Já resolvida: abre direto
+                if (g->map.door_puzzle_solved[ty][tx]) {
+                    g->map.tiles[ty][tx] = TILE_DOOR_OPEN;
+                    return false;
                 }
+                // Ativa o puzzle de tabela-verdade (uma única vez)
+                if (!g->ttable_active) {
+                    TruthTableSetup(g, ty, tx, cond);
+                }
+                return true; // Porta permanece bloqueada até resolver o puzzle
             }
 
+            // Portas simples: verificação por clue confirmada (sem puzzle)
+            bool has_condition = false;
+            for (int c = 0; c < g->clue_count; c++) {
+                if (strcmp(g->clues[c].tag, cond) == 0 && g->clues[c].confirmed) {
+                    has_condition = true;
+                    break;
+                }
+            }
             if (has_condition) {
                 g->map.tiles[ty][tx] = TILE_DOOR_OPEN;
-                if (strcmp(cond, "nP_OR_R") == 0) {
-                    ShowNotification(g, "TEMPLO DESBLOQUEADO",
-                        "¬P ∨ R confirmado. As anotacoes de Martim estao la dentro.", COL_UI_GOLD);
-                } else if (strcmp(cond, "Q_IMPL_R") == 0) {
-                    ShowNotification(g, "FORJA DESBLOQUEADA",
-                        "Q → R confirmado. O diario do Ferreiro pode revelar mais.", COL_PARADOXAL);
-                } else {
-                    ShowNotification(g, "PORTA ABERTA",
-                        "A proposicao logica ativou o mecanismo antigo.", COL_UI_GOLD);
-                }
+                ShowNotification(g, "PORTA ABERTA",
+                    "A proposicao logica ativou o mecanismo antigo.", COL_UI_GOLD);
                 return false;
             }
         }

@@ -130,6 +130,7 @@ typedef struct {
     bool      door_state[MAP_HEIGHT][MAP_WIDTH]; // open/closed
     bool      door_needs_logic[MAP_HEIGHT][MAP_WIDTH];
     char      door_condition[MAP_HEIGHT][MAP_WIDTH][16]; // tag needed
+    bool      door_puzzle_solved[MAP_HEIGHT][MAP_WIDTH]; // MELHORIA 1: tabela-verdade concluída
     int       width, height;
     Color     fog_of_war[MAP_HEIGHT][MAP_WIDTH];
     bool      explored[MAP_HEIGHT][MAP_WIDTH];
@@ -248,6 +249,52 @@ typedef struct {
     // Font
     Font      font_main;
     Font      font_mono;
+
+    // ============================================================
+    // MELHORIA 1: Puzzle de Tabela-Verdade para Portas Lógicas
+    // ============================================================
+    bool  ttable_active;
+    int   ttable_door_ty;
+    int   ttable_door_tx;
+    char  ttable_title[64];
+    char  ttable_col_a[12];
+    char  ttable_col_b[12];
+    char  ttable_col_result[24];
+    // rows[i][0]=val_A(1=V,2=F), [1]=val_B, [2]=resposta_correta(1=V,2=F)
+    int   ttable_rows[4][3];
+    int   ttable_user[4];        // 0=vazio 1=V 2=F
+    int   ttable_cursor;         // linha selecionada
+    bool  ttable_submitted;
+    bool  ttable_result_ok;
+    float ttable_feedback_timer;
+
+    // ============================================================
+    // MELHORIA 2: Quiz do NPC antes de revelar pista
+    // ============================================================
+    bool  npc_quiz_active;
+    int   npc_quiz_pending_clue; // pista a revelar se acertar
+    char  npc_quiz_question[256];
+    char  npc_quiz_opts[3][128];
+    int   npc_quiz_correct;      // índice da opção correta
+    int   npc_quiz_selected;     // -1=sem resposta
+    bool  npc_quiz_answered;
+    bool  npc_quiz_is_correct;
+    float npc_quiz_timer;
+
+    // ============================================================
+    // MELHORIA 3: Quiz de validação antes de confirmar dedução
+    // ============================================================
+    bool  ded_quiz_active;
+    char  ded_quiz_pending_result[16];
+    int   ded_quiz_pending_ded_idx;
+    int   ded_quiz_pending_clue_ci;
+    char  ded_quiz_question[256];
+    char  ded_quiz_opts[3][128];
+    int   ded_quiz_correct;
+    int   ded_quiz_selected;
+    bool  ded_quiz_answered;
+    bool  ded_quiz_is_correct;
+    float ded_quiz_timer;
     
     // Textures (procedural)
     Texture2D tex_tiles;
@@ -370,5 +417,19 @@ Color ColorAlpha2(Color c, float alpha);
 bool RectContains(Rectangle r, Vector2 p);
 void DrawTextCentered(Font font, const char* text, int y, int size, int spacing, Color col);
 void DrawTextCenteredX(Font font, const char* text, int cx, int y, int size, int spacing, Color col);
+
+// quiz.c
+bool NpcQuizNeeded(int clue_id);
+void NpcQuizSetup(GameState* g, int clue_id);
+void NpcQuizUpdate(GameState* g);
+void NpcQuizDraw(GameState* g);
+void TruthTableSetup(GameState* g, int door_ty, int door_tx, const char* cond);
+void TruthTableUpdate(GameState* g);
+void TruthTableDraw(GameState* g);
+bool DedQuizNeeded(const char* result);
+void DedQuizSetup(GameState* g, const char* result, int ded_idx, int clue_ci);
+void DedQuizUpdate(GameState* g);
+void DedQuizDraw(GameState* g);
+void ApplyDeductionResult(GameState* g, const char* result, int ded_idx, int clue_ci);
 
 #endif
