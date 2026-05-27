@@ -284,10 +284,10 @@ void TruthTableSetup(GameState* g, int door_ty, int door_tx, const char* cond) {
     for (int i = 0; i < 4; i++) g->ttable_user[i] = 0;
 
     if (strcmp(cond, "nP_OR_R") == 0) {
-        strncpy(g->ttable_title,      "Porta do Templo — complete: ¬P' ∨ R", 63);
+        strncpy(g->ttable_title,      "Porta do Templo — complete: ¬P' v R", 63);
         strncpy(g->ttable_col_a,      "¬P'",  11);
         strncpy(g->ttable_col_b,      "R",    11);
-        strncpy(g->ttable_col_result, "¬P' ∨ R", 23);
+        strncpy(g->ttable_col_result, "¬P' v R", 23);
         // rows[i] = {val_A, val_B, correct_result}  (1=V, 2=F)
         int rows[4][3] = {
             {1, 1, 1}, // V V → V
@@ -299,10 +299,10 @@ void TruthTableSetup(GameState* g, int door_ty, int door_tx, const char* cond) {
             g->ttable_rows[i][j] = rows[i][j];
 
     } else if (strcmp(cond, "Q_IMPL_R") == 0) {
-        strncpy(g->ttable_title,      "Porta da Forja — complete: Q → R", 63);
+        strncpy(g->ttable_title,      "Porta da Forja — complete: Q -> R", 63);
         strncpy(g->ttable_col_a,      "Q",    11);
         strncpy(g->ttable_col_b,      "R",    11);
-        strncpy(g->ttable_col_result, "Q → R", 23);
+        strncpy(g->ttable_col_result, "Q -> R", 23);
         int rows[4][3] = {
             {1, 1, 1}, // V V → V
             {1, 2, 2}, // V F → F  ← armadilha clássica
@@ -329,7 +329,7 @@ void TruthTableUpdate(GameState* g) {
                 const char* cond = g->map.door_condition[ty][tx];
                 if (strcmp(cond, "nP_OR_R") == 0) {
                     ShowNotification(g, "TEMPLO DESBLOQUEADO",
-                        "Tabela de ¬P'∨R completa. As anotacoes de Martim aguardam.",
+                        "Tabela de ¬P'vR completa. As anotacoes de Martim aguardam.",
                         COL_UI_GOLD);
                     // Também descobre a pista de lore do templo
                     if (!g->clues[11].discovered) {
@@ -339,7 +339,7 @@ void TruthTableUpdate(GameState* g) {
                     }
                 } else {
                     ShowNotification(g, "FORJA DESBLOQUEADA",
-                        "Tabela de Q→R completa. O diario do Ferreiro revela mais.",
+                        "Tabela de Q->R completa. O diario do Ferreiro revela mais.",
                         COL_PARADOXAL);
                     if (!g->clues[12].discovered) {
                         g->clues[12].discovered = true;
@@ -770,7 +770,7 @@ void DedQuizDraw(GameState* g) {
         bool correct = g->ded_quiz_answered && (i == g->ded_quiz_correct);
         bool wrong   = g->ded_quiz_answered && sel && !correct;
         DrawOptionButton(bx+12, oy, bw-24, 46, label, sel,
-                         g->ded_quiz_answered, correct, wrong, t);
+                        g->ded_quiz_answered, correct, wrong, t);
     }
 
     // Botão confirmar
