@@ -26,7 +26,7 @@ static void DrawQuizBox(int x, int y, int w, int h, const char* title, Color acc
 }
 
 static void DrawOptionButton(int x, int y, int w, int h,
-                            fconst char* text, bool selected, bool answered,
+                            const char* text, bool selected, bool answered,
                             bool correct, bool wrong, float t) {
     Color bg     = (Color){12,16,30,220};
     Color border = (Color){40,55,85,255};
