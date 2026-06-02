@@ -6,6 +6,19 @@ Jogo indie 2D de mistério investigativo e lógica proposicional — desenvolvid
 
 ---
 
+## 👨‍💻 Desenvolvedores
+
+A Ilha dos Paradoxos foi desenvolvida por:
+
+- Lucas Sereno
+- Luiz Guilherme Silvestre
+- Christopher Mark
+- Lucas Farias
+- Rafael Lucas Viana
+
+---
+
+
 ## 🎮 Controles
 
 | Tecla | Ação |
