@@ -214,7 +214,7 @@ void MenuDraw(GameState* g) {
     }
 
     // Nav hints
-    DrawTextCentered(g->font_main, "↑↓ Navegar    ENTER Confirmar",
+    DrawTextCentered(g->font_main, "ENTER Confirmar",
         H - 40, 15, 1, (Color){80,100,140,180});
 
     // Version
